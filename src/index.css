@@ -77,15 +77,44 @@
   input[type="number"] {
     -moz-appearance: textfield;
   }
+
+  [data-theme="cyber"] {
+    --color-neon-green: #00d4ff;
+    --color-neon-green-dim: #00a8cc;
+    --color-neon-blue: #a855f7;
+    --color-neon-blue-dim: #9333ea;
+    --color-success: #00d4ff;
+    --color-border-focus: #00d4ff;
+  }
+
+  [data-theme="synth"] {
+    --color-neon-green: #ff2d95;
+    --color-neon-green-dim: #c91f74;
+    --color-neon-blue: #00d4ff;
+    --color-neon-blue-dim: #00a8cc;
+    --color-success: #ff2d95;
+    --color-border-focus: #ff2d95;
+  }
+
+  [data-theme="blaze"] {
+    --color-neon-green: #ff6b35;
+    --color-neon-green-dim: #db5322;
+    --color-neon-blue: #ffd700;
+    --color-neon-blue-dim: #e6c200;
+    --color-success: #ff6b35;
+    --color-border-focus: #ff6b35;
+  }
 }
 
 @layer utilities {
   .glow-green {
-    box-shadow: 0 0 20px rgba(57, 255, 20, 0.3), 0 0 60px rgba(57, 255, 20, 0.1);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--color-neon-green) 30%, transparent), 
+                0 0 60px color-mix(in srgb, var(--color-neon-green) 10%, transparent);
   }
 
   .glow-blue {
-    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3), 0 0 60px rgba(0, 212, 255, 0.1);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--color-neon-blue) 30%, transparent), 
+                0 0 60px color-mix(in srgb, var(--color-neon-blue) 10%, transparent);
   }
 
   .glow-text-green {

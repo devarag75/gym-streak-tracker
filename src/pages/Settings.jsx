@@ -7,6 +7,7 @@ import {
   Dumbbell, BarChart3, Clock
 } from 'lucide-react';
 import { exportAllData, importAllData, clearAllData } from '../db/database';
+import { useSettingsStore } from '../store/stores';
 
 export default function Settings() {
   const [showConfirmReset, setShowConfirmReset] = useState(false);
@@ -65,6 +66,15 @@ export default function Settings() {
     setTimeout(() => window.location.reload(), 1500);
   };
 
+  const { theme, setTheme } = useSettingsStore();
+
+  const themes = [
+    { id: 'default', name: 'Neon Green', color: '#39ff14' },
+    { id: 'cyber', name: 'Cyber Blue', color: '#00d4ff' },
+    { id: 'synth', name: 'Synth Pink', color: '#ff2d95' },
+    { id: 'blaze', name: 'Blaze Orange', color: '#ff6b35' }
+  ];
+
   const menuItems = [
     {
       section: 'Pages',
@@ -113,6 +123,32 @@ export default function Settings() {
           <Check size={16} /> {notification}
         </motion.div>
       )}
+
+      {/* Theme Section */}
+      <div className="mb-6">
+        <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+          Accent Theme
+        </p>
+        <div className="flex gap-3">
+          {themes.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTheme(t.id)}
+              className={`relative flex-1 aspect-square rounded-2xl flex flex-col items-center justify-center gap-1.5 border-2 transition-all ${
+                theme === t.id ? 'border-border-focus bg-bg-card-hover' : 'border-transparent bg-bg-card hover:bg-bg-card-hover'
+              }`}
+            >
+              <div
+                className="w-6 h-6 rounded-full"
+                style={{
+                  backgroundColor: t.color,
+                  boxShadow: theme === t.id ? `0 0 15px ${t.color}80` : 'none',
+                }}
+              />
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Menu Sections */}
       <div className="space-y-6">

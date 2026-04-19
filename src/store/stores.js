@@ -139,3 +139,18 @@ export const useFriendStore = create((set, get) => ({
     set((s) => ({ friends: s.friends.filter((f) => f.id !== id) }));
   },
 }));
+
+export const useSettingsStore = create((set) => ({
+  theme: 'default',
+  loading: true,
+
+  loadSettings: async () => {
+    const theme = await db.getSetting('theme') || 'default';
+    set({ theme, loading: false });
+  },
+
+  setTheme: async (theme) => {
+    await db.setSetting('theme', theme);
+    set({ theme });
+  },
+}));
