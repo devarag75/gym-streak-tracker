@@ -1,11 +1,12 @@
-const CACHE_NAME = 'gym-streak-v1';
+const CACHE_NAME = 'gym-streak-v2';
+const APP_BASE = '/gym-streak-tracker/';
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon.svg',
-  '/icon-192.png',
-  '/icon-512.png',
+  APP_BASE,
+  APP_BASE + 'index.html',
+  APP_BASE + 'manifest.json',
+  APP_BASE + 'icon.svg',
+  APP_BASE + 'icon-192.png',
+  APP_BASE + 'icon-512.png',
 ];
 
 // Install - cache static assets
@@ -48,7 +49,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           return response;
         })
-        .catch(() => caches.match('/index.html'))
+        .catch(() => caches.match(APP_BASE + 'index.html'))
     );
     return;
   }
