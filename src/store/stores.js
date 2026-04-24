@@ -37,8 +37,10 @@ export const useWorkoutStore = create((set, get) => ({
   },
 
   getStreak: () => {
-    const dates = get().workouts.map((w) => w.date);
-    return calculateStreak(dates);
+    // Need to get restDays from Settings Store
+    const weeklyRestDays = useSettingsStore.getState().restDays || [];
+    const workouts = get().workouts;
+    return calculateStreak(workouts, weeklyRestDays);
   },
 
   getLastWorkout: () => {
@@ -142,15 +144,22 @@ export const useFriendStore = create((set, get) => ({
 
 export const useSettingsStore = create((set) => ({
   theme: 'default',
+  restDays: [],
   loading: true,
 
   loadSettings: async () => {
     const theme = await db.getSetting('theme') || 'default';
-    set({ theme, loading: false });
+    const restDays = await db.getSetting('restDays') || [];
+    set({ theme, restDays, loading: false });
   },
 
   setTheme: async (theme) => {
     await db.setSetting('theme', theme);
     set({ theme });
+  },
+
+  setRestDays: async (restDays) => {
+    await db.setSetting('restDays', restDays);
+    set({ restDays });
   },
 }));

@@ -36,44 +36,74 @@ export function getLastNDays(n) {
   return days;
 }
 
-export function calculateStreak(workoutDates) {
-  if (!workoutDates || workoutDates.length === 0) return { current: 0, longest: 0 };
+export function calculateStreak(workouts, weeklyRestDays = []) {
+  if (!workouts || workouts.length === 0) return { current: 0, longest: 0 };
 
-  const uniqueDates = [...new Set(workoutDates)].sort().reverse();
-  const today = getToday();
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  const todayStr = getToday();
+
+  // Get all dates where user exercised (excluding manual rest days)
+  const exerciseDates = [...new Set(workouts.filter(w => !w.isRestDay).map(w => w.date))].sort();
+
+  // Manual rest day dates
+  const manualRestDates = [...new Set(workouts.filter(w => w.isRestDay).map(w => w.date))];
+
+  // Helper to check if a date is a rest day
+  const isRestDate = (dateStr) => {
+    if (manualRestDates.includes(dateStr)) return true;
+    const d = new Date(dateStr + 'T00:00:00');
+    return weeklyRestDays.includes(d.getDay());
+  };
+
+  if (exerciseDates.length === 0) {
+    return { current: 0, longest: 0 };
+  }
+
+  const earliestExerciseDate = new Date(exerciseDates[0] + 'T00:00:00');
 
   // Current streak
   let currentStreak = 0;
-  if (uniqueDates[0] === today || uniqueDates[0] === yesterdayStr) {
-    currentStreak = 1;
-    for (let i = 1; i < uniqueDates.length; i++) {
-      const diff = getDaysBetween(uniqueDates[i], uniqueDates[i - 1]);
-      if (diff === 1) {
-        currentStreak++;
-      } else {
+  let dateToCheck = new Date(todayStr + 'T00:00:00');
+
+  while (dateToCheck >= earliestExerciseDate) {
+    const dateStr = dateToCheck.toISOString().split('T')[0];
+    const didExercise = exerciseDates.includes(dateStr);
+    const isRest = isRestDate(dateStr);
+
+    if (didExercise) {
+      currentStreak++;
+    } else if (!isRest) {
+      // If it's not a rest day and no exercise
+      if (dateStr !== todayStr) {
+        // Break the streak if it's not today.
         break;
       }
     }
+
+    dateToCheck.setDate(dateToCheck.getDate() - 1);
   }
 
   // Longest streak
   let longestStreak = 0;
-  let tempStreak = 1;
-  const sortedDates = [...uniqueDates].sort();
-  for (let i = 1; i < sortedDates.length; i++) {
-    const diff = getDaysBetween(sortedDates[i - 1], sortedDates[i]);
-    if (diff === 1) {
+  let tempStreak = 0;
+  let iterDate = new Date(earliestExerciseDate);
+  const end = new Date(todayStr + 'T00:00:00');
+
+  while (iterDate <= end) {
+    const dateStr = iterDate.toISOString().split('T')[0];
+    const didExercise = exerciseDates.includes(dateStr);
+    const isRest = isRestDate(dateStr);
+
+    if (didExercise) {
       tempStreak++;
-    } else {
       longestStreak = Math.max(longestStreak, tempStreak);
-      tempStreak = 1;
+    } else if (!isRest) {
+      if (dateStr !== todayStr) {
+        tempStreak = 0;
+      }
     }
+
+    iterDate.setDate(iterDate.getDate() + 1);
   }
-  longestStreak = Math.max(longestStreak, tempStreak);
-  if (uniqueDates.length === 0) longestStreak = 0;
 
   return { current: currentStreak, longest: longestStreak };
 }

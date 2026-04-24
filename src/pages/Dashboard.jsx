@@ -1,8 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flame, Trophy, Dumbbell, Weight, TrendingUp, ChevronRight, Zap, Star } from 'lucide-react';
-import { useWorkoutStore, useWeightStore } from '../store/stores';
+import { Flame, Trophy, Dumbbell, Weight, TrendingUp, ChevronRight, Zap, Star, Moon } from 'lucide-react';
+import { useWorkoutStore, useWeightStore, useSettingsStore } from '../store/stores';
 import { getToday, getRandomMotivation, getStreakBadges, getLastNDays, formatDateShort, calculateStreak } from '../utils/helpers';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 
@@ -60,9 +60,9 @@ function StatCard({ icon: Icon, label, value, unit, color, to }) {
   );
 }
 
-export default function Dashboard() {
   const { workouts, loadWorkouts } = useWorkoutStore();
   const { weights, loadWeights } = useWeightStore();
+  const { restDays } = useSettingsStore();
   const [motivation, setMotivation] = useState('');
 
   useEffect(() => {
@@ -86,15 +86,17 @@ export default function Dashboard() {
   const last7Days = useMemo(() => getLastNDays(7), []);
   const chartData = useMemo(() => {
     return last7Days.map((day) => {
+      const dayDate = new Date(day);
       const dayWorkouts = workouts.filter((w) => w.date === day);
       const totalSets = dayWorkouts.reduce((acc, w) => {
         return acc + (w.bodyParts || []).reduce((a, bp) => {
           return a + (bp.exercises || []).reduce((b, ex) => b + (ex.sets || []).length, 0);
         }, 0);
       }, 0);
-      return { day: formatDateShort(day), sets: totalSets, hasWorkout: dayWorkouts.length > 0 };
+      const isRest = dayWorkouts.some(w => w.isRestDay) || restDays?.includes(dayDate.getDay());
+      return { day: formatDateShort(day), sets: totalSets, hasWorkout: dayWorkouts.some(w => !w.isRestDay), isRest };
     });
-  }, [workouts, last7Days]);
+  }, [workouts, last7Days, restDays]);
 
   return (
     <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
@@ -105,15 +107,33 @@ export default function Dashboard() {
           <p className="text-sm text-text-secondary mt-0.5">Track. Push. Conquer.</p>
         </div>
         <motion.div
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-bg-card border border-border"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border ${
+            todayWorkout && !todayWorkout.isRestDay
+              ? 'bg-neon-green/10 border-neon-green/30'
+              : (todayWorkout?.isRestDay || restDays?.includes(new Date().getDay()))
+              ? 'bg-neon-blue/10 border-neon-blue/30'
+              : 'bg-bg-card border-border'
+          }`}
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2, type: 'spring' }}
         >
-          <Zap size={14} className="text-neon-yellow" />
-          <span className="text-xs font-medium text-text-secondary">
-            {todayWorkout ? 'Done Today' : 'Not Yet'}
-          </span>
+          {todayWorkout && !todayWorkout.isRestDay ? (
+            <>
+              <Zap size={14} className="text-neon-green" />
+              <span className="text-xs font-medium text-neon-green">Done Today</span>
+            </>
+          ) : todayWorkout?.isRestDay || restDays?.includes(new Date().getDay()) ? (
+            <>
+              <Moon size={14} className="text-neon-blue" />
+              <span className="text-xs font-medium text-neon-blue">Rest Day</span>
+            </>
+          ) : (
+            <>
+              <Zap size={14} className="text-text-muted" />
+              <span className="text-xs font-medium text-text-secondary">Not Yet</span>
+            </>
+          )}
         </motion.div>
       </div>
 
@@ -216,9 +236,9 @@ export default function Dashboard() {
               <div key={i} className="flex flex-col items-center gap-1">
                 <div
                   className={`w-2.5 h-2.5 rounded-full transition-colors ${
-                    d.hasWorkout ? 'bg-neon-green' : 'bg-border'
+                    d.hasWorkout ? 'bg-neon-green' : d.isRest ? 'bg-neon-blue' : 'bg-border'
                   }`}
-                  style={d.hasWorkout ? { boxShadow: '0 0 6px rgba(57,255,20,0.4)' } : {}}
+                  style={d.hasWorkout ? { boxShadow: '0 0 6px rgba(57,255,20,0.4)' } : d.isRest ? { boxShadow: '0 0 6px rgba(0,212,255,0.4)' } : {}}
                 />
               </div>
             ))}
@@ -233,7 +253,7 @@ export default function Dashboard() {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          {todayWorkout ? '+ Add Another Workout' : '🏋️ Start Workout'}
+          {todayWorkout && !todayWorkout.isRestDay ? '+ Add Another Workout' : '🏋️ Start Workout'}
         </motion.button>
       </Link>
     </div>

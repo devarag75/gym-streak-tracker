@@ -66,7 +66,7 @@ export default function Settings() {
     setTimeout(() => window.location.reload(), 1500);
   };
 
-  const { theme, setTheme } = useSettingsStore();
+  const { theme, setTheme, restDays, setRestDays } = useSettingsStore();
 
   const themes = [
     { id: 'default', name: 'Neon Green', color: '#39ff14' },
@@ -148,6 +148,38 @@ export default function Settings() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Weekly Rest Days Section */}
+      <div className="mb-6">
+        <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+          Weekly Rest Days
+        </p>
+        <div className="flex gap-2">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                const current = restDays || [];
+                if (current.includes(index)) {
+                  setRestDays(current.filter(d => d !== index));
+                } else {
+                  setRestDays([...current, index]);
+                }
+              }}
+              className={`flex-1 aspect-square rounded-xl text-sm font-bold border-2 transition-all flex items-center justify-center ${
+                (restDays || []).includes(index)
+                  ? 'border-neon-blue bg-neon-blue/10 text-neon-blue'
+                  : 'border-border bg-bg-card text-text-muted hover:border-border-focus'
+              }`}
+            >
+              {day}
+            </button>
+          ))}
+        </div>
+        <p className="text-[10px] text-text-muted mt-2">
+          Streaks won't be broken if you skip a workout on these days.
+        </p>
       </div>
 
       {/* Menu Sections */}

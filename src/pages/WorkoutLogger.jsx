@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Trash2, ChevronDown, ChevronRight, Save, Copy, BookTemplate,
-  Dumbbell, X, Check, RotateCcw
+  Dumbbell, X, Check, RotateCcw, Moon
 } from 'lucide-react';
 import { useWorkoutStore, useTemplateStore } from '../store/stores';
 import { getToday, generateId } from '../utils/helpers';
@@ -244,6 +244,7 @@ export default function WorkoutLogger() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [templateName, setTemplateName] = useState('');
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [isRestDay, setIsRestDay] = useState(false);
 
   useEffect(() => {
     loadTemplates();
@@ -311,18 +312,25 @@ export default function WorkoutLogger() {
   }, [getLastWorkout]);
 
   const saveWorkout = async () => {
-    if (bodyParts.length === 0) return;
     setSaving(true);
     try {
-      // Clean up: remove id fields for storage
-      const cleanParts = bodyParts.map((bp) => ({
-        name: bp.name || 'Unnamed',
-        exercises: bp.exercises.map((ex) => ({
-          name: ex.name || 'Unnamed',
-          sets: ex.sets.map((s) => ({ reps: s.reps || 0, weight: s.weight || 0 })),
-        })),
-      }));
-      await addWorkout({ date, bodyParts: cleanParts });
+      if (isRestDay) {
+        await addWorkout({ date, isRestDay: true, bodyParts: [] });
+      } else {
+        if (bodyParts.length === 0) {
+          setSaving(false);
+          return;
+        }
+        // Clean up: remove id fields for storage
+        const cleanParts = bodyParts.map((bp) => ({
+          name: bp.name || 'Unnamed',
+          exercises: bp.exercises.map((ex) => ({
+            name: ex.name || 'Unnamed',
+            sets: ex.sets.map((s) => ({ reps: s.reps || 0, weight: s.weight || 0 })),
+          })),
+        }));
+        await addWorkout({ date, bodyParts: cleanParts });
+      }
       navigate('/');
     } catch (err) {
       console.error(err);
@@ -364,18 +372,30 @@ export default function WorkoutLogger() {
       {/* Quick Actions */}
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
         <button
-          onClick={loadLastWorkout}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-bg-card border border-border text-xs font-medium text-text-secondary hover:text-neon-blue hover:border-neon-blue/30 transition-colors whitespace-nowrap"
+          onClick={() => setIsRestDay(!isRestDay)}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-colors whitespace-nowrap ${
+            isRestDay 
+              ? 'bg-neon-blue/10 border-neon-blue text-neon-blue' 
+              : 'bg-bg-card border-border text-text-secondary hover:text-neon-blue hover:border-neon-blue/30'
+          }`}
         >
-          <RotateCcw size={12} /> Last Workout
+          <Moon size={12} /> {isRestDay ? 'Rest Day' : 'Mark Rest Day'}
         </button>
+        {!isRestDay && (
+          <>
+            <button
+              onClick={loadLastWorkout}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-bg-card border border-border text-xs font-medium text-text-secondary hover:text-neon-blue hover:border-neon-blue/30 transition-colors whitespace-nowrap"
+            >
+              <RotateCcw size={12} /> Last Workout
+            </button>
         <button
           onClick={() => setShowTemplates(!showTemplates)}
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-bg-card border border-border text-xs font-medium text-text-secondary hover:text-neon-purple hover:border-neon-purple/30 transition-colors whitespace-nowrap"
         >
           <BookTemplate size={12} /> Templates
         </button>
-        {bodyParts.length > 0 && (
+        {!isRestDay && bodyParts.length > 0 && (
           <button
             onClick={() => setShowSaveTemplate(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-bg-card border border-border text-xs font-medium text-text-secondary hover:text-neon-orange hover:border-neon-orange/30 transition-colors whitespace-nowrap"
@@ -385,7 +405,9 @@ export default function WorkoutLogger() {
         )}
       </div>
 
-      {/* Template Picker */}
+      {!isRestDay ? (
+        <>
+          {/* Template Picker */}
       <AnimatePresence>
         {showTemplates && (
           <motion.div
@@ -467,22 +489,40 @@ export default function WorkoutLogger() {
         </AnimatePresence>
       </div>
 
-      {/* Add Body Part */}
-      <motion.button
-        onClick={addBodyPart}
-        className="w-full py-3 mb-4 rounded-2xl border-2 border-dashed border-border text-sm font-medium text-text-muted hover:text-neon-green hover:border-neon-green/30 transition-colors flex items-center justify-center gap-2"
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
-      >
-        <Plus size={18} /> Add Body Part
-      </motion.button>
+          {/* Add Body Part */}
+          <motion.button
+            onClick={addBodyPart}
+            className="w-full py-3 mb-4 rounded-2xl border-2 border-dashed border-border text-sm font-medium text-text-muted hover:text-neon-green hover:border-neon-green/30 transition-colors flex items-center justify-center gap-2"
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+          >
+            <Plus size={18} /> Add Body Part
+          </motion.button>
+        </>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center justify-center py-12 px-4 text-center rounded-2xl border border-dashed border-neon-blue/30 bg-neon-blue/5 mb-6"
+        >
+          <Moon size={48} className="text-neon-blue mb-4 opacity-80" />
+          <h3 className="text-xl font-bold text-neon-blue mb-2">Rest Day</h3>
+          <p className="text-sm text-text-secondary">
+            Take it easy. Your streak won't be broken for skipping today.
+          </p>
+        </motion.div>
+      )}
 
       {/* Save Workout */}
-      {bodyParts.length > 0 && (
+      {(bodyParts.length > 0 || isRestDay) && (
         <motion.button
           onClick={saveWorkout}
           disabled={saving}
-          className="w-full py-4 rounded-2xl font-bold text-lg text-bg-primary bg-gradient-to-r from-neon-green to-neon-blue hover:opacity-90 transition-opacity glow-green disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+          className={`w-full py-4 rounded-2xl font-bold text-lg text-bg-primary hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer ${
+            isRestDay 
+              ? 'bg-neon-blue glow-blue' 
+              : 'bg-gradient-to-r from-neon-green to-neon-blue glow-green'
+          }`}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           initial={{ opacity: 0, y: 20 }}
