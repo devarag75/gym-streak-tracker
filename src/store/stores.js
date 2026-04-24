@@ -163,3 +163,36 @@ export const useSettingsStore = create((set) => ({
     set({ restDays });
   },
 }));
+
+export const useItemsStore = create((set, get) => ({
+  bodyParts: [],
+  exercises: [],
+  loading: false,
+
+  loadItems: async () => {
+    set({ loading: true });
+    const bodyParts = await db.getAllBodyParts();
+    const exercises = await db.getAllExercises();
+    set({ bodyParts: bodyParts.map(bp => bp.name), exercises: exercises.map(ex => ex.name), loading: false });
+  },
+
+  addBodyPart: async (name) => {
+    await db.addBodyPart(name);
+    set(state => {
+      if (!state.bodyParts.includes(name)) {
+        return { bodyParts: [...state.bodyParts, name] };
+      }
+      return state;
+    });
+  },
+
+  addExercise: async (name) => {
+    await db.addExercise(name);
+    set(state => {
+      if (!state.exercises.includes(name)) {
+        return { exercises: [...state.exercises, name] };
+      }
+      return state;
+    });
+  },
+}));

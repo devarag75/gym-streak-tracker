@@ -1,7 +1,7 @@
 import { openDB } from 'idb';
 
 const DB_NAME = 'GymStreakTracker';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise = null;
 
@@ -25,6 +25,12 @@ function getDB() {
         }
         if (!db.objectStoreNames.contains('settings')) {
           db.createObjectStore('settings', { keyPath: 'key' });
+        }
+        if (!db.objectStoreNames.contains('bodyParts')) {
+          db.createObjectStore('bodyParts', { keyPath: 'name' });
+        }
+        if (!db.objectStoreNames.contains('exercises')) {
+          db.createObjectStore('exercises', { keyPath: 'name' });
         }
       },
     });
@@ -145,6 +151,27 @@ export async function deleteFriend(id) {
   return db.delete('friends', id);
 }
 
+// Items (Body Parts & Exercises)
+export async function addBodyPart(name) {
+  const db = await getDB();
+  return db.put('bodyParts', { name, createdAt: new Date().toISOString() });
+}
+
+export async function getAllBodyParts() {
+  const db = await getDB();
+  return db.getAll('bodyParts');
+}
+
+export async function addExercise(name) {
+  const db = await getDB();
+  return db.put('exercises', { name, createdAt: new Date().toISOString() });
+}
+
+export async function getAllExercises() {
+  const db = await getDB();
+  return db.getAll('exercises');
+}
+
 // Settings
 export async function getSetting(key) {
   const db = await getDB();
@@ -165,12 +192,14 @@ export async function exportAllData() {
   const templates = await db.getAll('templates');
   const friends = await db.getAll('friends');
   const settings = await db.getAll('settings');
-  return { workouts, weights, templates, friends, settings, exportDate: new Date().toISOString() };
+  const bodyParts = await db.getAll('bodyParts');
+  const exercises = await db.getAll('exercises');
+  return { workouts, weights, templates, friends, settings, bodyParts, exercises, exportDate: new Date().toISOString() };
 }
 
 export async function importAllData(data) {
   const db = await getDB();
-  const tx = db.transaction(['workouts', 'weights', 'templates', 'friends', 'settings'], 'readwrite');
+  const tx = db.transaction(['workouts', 'weights', 'templates', 'friends', 'settings', 'bodyParts', 'exercises'], 'readwrite');
 
   // Clear existing data
   await tx.objectStore('workouts').clear();
@@ -178,6 +207,8 @@ export async function importAllData(data) {
   await tx.objectStore('templates').clear();
   await tx.objectStore('friends').clear();
   await tx.objectStore('settings').clear();
+  await tx.objectStore('bodyParts').clear();
+  await tx.objectStore('exercises').clear();
 
   // Import new data
   for (const workout of (data.workouts || [])) {
@@ -195,17 +226,25 @@ export async function importAllData(data) {
   for (const setting of (data.settings || [])) {
     await tx.objectStore('settings').put(setting);
   }
+  for (const bp of (data.bodyParts || [])) {
+    await tx.objectStore('bodyParts').put(bp);
+  }
+  for (const ex of (data.exercises || [])) {
+    await tx.objectStore('exercises').put(ex);
+  }
 
   await tx.done;
 }
 
 export async function clearAllData() {
   const db = await getDB();
-  const tx = db.transaction(['workouts', 'weights', 'templates', 'friends', 'settings'], 'readwrite');
+  const tx = db.transaction(['workouts', 'weights', 'templates', 'friends', 'settings', 'bodyParts', 'exercises'], 'readwrite');
   await tx.objectStore('workouts').clear();
   await tx.objectStore('weights').clear();
   await tx.objectStore('templates').clear();
   await tx.objectStore('friends').clear();
   await tx.objectStore('settings').clear();
+  await tx.objectStore('bodyParts').clear();
+  await tx.objectStore('exercises').clear();
   await tx.done;
 }

@@ -60,6 +60,7 @@ function StatCard({ icon: Icon, label, value, unit, color, to }) {
   );
 }
 
+export default function Dashboard() {
   const { workouts, loadWorkouts } = useWorkoutStore();
   const { weights, loadWeights } = useWeightStore();
   const { restDays } = useSettingsStore();

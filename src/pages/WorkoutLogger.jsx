@@ -5,8 +5,9 @@ import {
   Plus, Trash2, ChevronDown, ChevronRight, Save, Copy, BookTemplate,
   Dumbbell, X, Check, RotateCcw, Moon
 } from 'lucide-react';
-import { useWorkoutStore, useTemplateStore } from '../store/stores';
+import { useWorkoutStore, useTemplateStore, useItemsStore } from '../store/stores';
 import { getToday, generateId } from '../utils/helpers';
+import AutocompleteInput from '../components/AutocompleteInput';
 
 function SetRow({ set, setIndex, onUpdate, onDelete }) {
   return (
@@ -50,6 +51,7 @@ function SetRow({ set, setIndex, onUpdate, onDelete }) {
 
 function ExerciseCard({ exercise, onUpdate, onDelete }) {
   const [expanded, setExpanded] = useState(true);
+  const { exercises, addExercise } = useItemsStore();
 
   const addSet = () => {
     const lastSet = exercise.sets[exercise.sets.length - 1];
@@ -86,12 +88,14 @@ function ExerciseCard({ exercise, onUpdate, onDelete }) {
           {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         </button>
         <Dumbbell size={14} className="text-neon-blue" />
-        <input
-          type="text"
+        <AutocompleteInput
           value={exercise.name}
-          onChange={(e) => updateName(e.target.value)}
-          className="flex-1 bg-transparent text-sm font-semibold focus:outline-none placeholder:text-text-muted"
+          onChange={updateName}
+          options={exercises}
+          onAddNew={addExercise}
           placeholder="Exercise name"
+          className="flex-1"
+          inputClassName="text-sm font-semibold"
         />
         <span className="text-[10px] text-text-muted px-1.5 py-0.5 rounded-md bg-bg-card">
           {exercise.sets.length} sets
@@ -149,6 +153,7 @@ function ExerciseCard({ exercise, onUpdate, onDelete }) {
 
 function BodyPartSection({ bodyPart, onUpdate, onDelete }) {
   const [expanded, setExpanded] = useState(true);
+  const { bodyParts, addBodyPart } = useItemsStore();
 
   const addExercise = () => {
     onUpdate({
@@ -183,12 +188,14 @@ function BodyPartSection({ bodyPart, onUpdate, onDelete }) {
           {expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
         </button>
         <div className="w-2 h-2 rounded-full bg-neon-green" style={{ boxShadow: '0 0 6px rgba(57,255,20,0.4)' }} />
-        <input
-          type="text"
+        <AutocompleteInput
           value={bodyPart.name}
-          onChange={(e) => onUpdate({ ...bodyPart, name: e.target.value })}
-          className="flex-1 bg-transparent font-bold text-base focus:outline-none placeholder:text-text-muted"
+          onChange={(name) => onUpdate({ ...bodyPart, name })}
+          options={bodyParts}
+          onAddNew={addBodyPart}
           placeholder="Body Part (e.g., Chest)"
+          className="flex-1"
+          inputClassName="font-bold text-base"
         />
         <span className="text-[10px] text-text-muted px-2 py-0.5 rounded-full bg-bg-input">
           {bodyPart.exercises.length} exercises
@@ -238,6 +245,7 @@ export default function WorkoutLogger() {
   const [searchParams] = useSearchParams();
   const { addWorkout, getLastWorkout, workouts } = useWorkoutStore();
   const { templates, loadTemplates, addTemplate } = useTemplateStore();
+  const { loadItems } = useItemsStore();
   const [bodyParts, setBodyParts] = useState([]);
   const [date, setDate] = useState(getToday());
   const [saving, setSaving] = useState(false);
@@ -248,6 +256,7 @@ export default function WorkoutLogger() {
 
   useEffect(() => {
     loadTemplates();
+    loadItems();
     const duplicateId = searchParams.get('duplicate');
     const templateId = searchParams.get('template');
     if (duplicateId) {
@@ -402,6 +411,8 @@ export default function WorkoutLogger() {
           >
             <Save size={12} /> Save Template
           </button>
+        )}
+          </>
         )}
       </div>
 
